@@ -2,11 +2,22 @@
 
 Code and sample data accompanying *[paper title, to be added]*.
 
-Worm videos are tracked with Tierpsy Tracker (a copy with local changes is
-included). Per-worm features are exported to CSV, frames where Tierpsy swapped
-head and tail are corrected, and a Python pipeline turns each worm's speed and
-track into general, active-only and normalized summary tables, per-worm
-frame, per-minute and bout tables, and plots.
+Worm videos are tracked with a modified version of Tierpsy Tracker (included
+in `TierpsyTracker_modified/`). Per-worm features are exported to CSV, frames
+where Tierpsy swapped head and tail are corrected, and a Python pipeline turns
+each worm's speed and track into general, active-only and normalized summary
+tables, per-worm frame, per-minute and bout tables, and plots.
+
+> **About Tierpsy Tracker.** Tierpsy Tracker is not our software. It was
+> developed by the MRC-LMS Behavioural Phenomics Lab at Imperial College
+> London and is published at <https://github.com/Tierpsy/tierpsy-tracker>
+> (Javer et al., *Nature Methods* 2018). The copy in
+> `TierpsyTracker_modified/tierpsy-tracker/` is a **modified version** of the
+> original, not an official Tierpsy release: it starts from the original
+> code at commit `2653ecb`, with four files changed. See
+> [Tierpsy Tracker: original and modified version](#tierpsy-tracker-original-and-modified-version)
+> for what changed, and [Citation](#citation) for the original papers. For the
+> unmodified software, use the original repository.
 
 ## Repository layout
 
@@ -20,7 +31,8 @@ custom_python_scripts/       analysis code (run commands from this folder)
 └── USEFUL_COMMANDS.txt      every processing step, with commands
 Sample_data/                 one real recording (071026_HML1630_01) in the layout
                              the code expects; its README explains the layout
-TierpsyTracker_modified/     Tierpsy Tracker source with local changes, its conda
+TierpsyTracker_modified/     modified version of Tierpsy Tracker (original:
+                             github.com/Tierpsy/tierpsy-tracker), its conda
                              environment and INSTALL_INSTRUCTIONS.txt
 ```
 
@@ -46,7 +58,7 @@ The sample's head/tail-corrected speeds were made without any corrections
 
 ## Using your own videos
 
-1. Track the videos with Tierpsy Tracker:
+1. Track the videos with the modified Tierpsy Tracker:
    `TierpsyTracker_modified/INSTALL_INSTRUCTIONS.txt`.
 2. Lay out the Tierpsy output and CSVs like `Sample_data/`, then export
    features, correct head/tail swaps, build the FPS table and run the
@@ -69,34 +81,80 @@ Three conda environments, each with an exact-version `environment.yml`:
 |---|---|---|
 | `worm-analysis` | `custom_python_scripts/worm_analysis/environment.yml` | analysis, notebook, CSV export, fixed speeds, FPS table |
 | `ht_flip` | `custom_python_scripts/head_tail_flips/environment.yml` | head/tail flip-range tool |
-| `tierpsy` | `TierpsyTracker_modified/environment.yml` | Tierpsy Tracker |
+| `tierpsy` | `TierpsyTracker_modified/environment.yml` | modified Tierpsy Tracker |
 
 All three were recorded on macOS on Apple silicon (osx-arm64). Other platforms
 were not tested; comments in each file say which entries to delete if conda
 cannot resolve them.
 
-## Tierpsy Tracker
+## Tierpsy Tracker: original and modified version
 
-`TierpsyTracker_modified/tierpsy-tracker/` is
-[Tierpsy Tracker](https://github.com/Tierpsy/tierpsy-tracker) at upstream
-commit `2653ecb`, with local changes to four files:
+### Original
 
-- `tierpsy/features/open_worm_analysis_toolbox/prefeatures/basic_worm.py`
-- `tierpsy/gui/GetAllParameters.py`
-- `tierpsy/gui/MWTrackerViewer.py`
-- `tierpsy/gui/PlotFeatures.py`
+Tierpsy Tracker was developed by the MRC-LMS Behavioural Phenomics Lab at
+Imperial College London.
 
-Tierpsy Tracker was developed by the MRC-LMS Behavioural Phenomics Lab; its
-publications are listed in `TierpsyTracker_modified/tierpsy-tracker/README.md`.
+- Source code: <https://github.com/Tierpsy/tierpsy-tracker>
+- Website: <https://tierpsy.com>
+- License: MIT, Copyright (c) 2017 Medical Research Council
+- Papers: see [Citation](#citation)
+
+### Modified version in this repository
+
+`TierpsyTracker_modified/tierpsy-tracker/` is a modified version of the
+original. It was copied from the original repository at commit
+[`2653ecb`](https://github.com/Tierpsy/tierpsy-tracker/commit/2653ecb3697602e3d6d763c92bc5fb1864c60f15)
+(`development` branch, 18 May 2026). Compared with that commit:
+
+- 298 files are unchanged.
+- 4 files were modified:
+  - `tierpsy/features/open_worm_analysis_toolbox/prefeatures/basic_worm.py`
+  - `tierpsy/gui/GetAllParameters.py`
+  - `tierpsy/gui/MWTrackerViewer.py`
+  - `tierpsy/gui/PlotFeatures.py`
+- 1 file was added: `requirements-macos_fixed.txt`.
+
+To see every change, compare the original commit with the modified copy (from
+this repository's top folder):
+
+```bash
+git clone https://github.com/Tierpsy/tierpsy-tracker.git tierpsy-original
+git -C tierpsy-original checkout 2653ecb3697602e3d6d763c92bc5fb1864c60f15
+diff -ru tierpsy-original/tierpsy TierpsyTracker_modified/tierpsy-tracker/tierpsy
+```
+
+The modified version keeps the original's MIT license and copyright notice
+(`TierpsyTracker_modified/tierpsy-tracker/LICENSE`) and its README
+(`TierpsyTracker_modified/tierpsy-tracker/README.md`). Install it with
+`TierpsyTracker_modified/INSTALL_INSTRUCTIONS.txt`.
 
 ## License
 
-The code in this repository is released under the MIT License (`LICENSE`).
-`TierpsyTracker_modified/tierpsy-tracker/` keeps Tierpsy Tracker's own MIT
-License (`TierpsyTracker_modified/tierpsy-tracker/LICENSE`). The raw sample
-video on Zenodo is licensed CC BY 4.0.
+The code written for this repository is released under the MIT License
+(`LICENSE`). The modified Tierpsy Tracker in
+`TierpsyTracker_modified/tierpsy-tracker/` remains under Tierpsy Tracker's
+original MIT License, Copyright (c) 2017 Medical Research Council
+(`TierpsyTracker_modified/tierpsy-tracker/LICENSE`). The raw sample video on
+Zenodo is licensed CC BY 4.0.
 
 ## Citation
 
+### This work
+
 <!-- Add the paper's citation (authors, title, journal, year, DOI) here. -->
 *To be added.*
+
+### Tierpsy Tracker
+
+If you use Tierpsy Tracker, including the modified version in this
+repository, please cite the original Tierpsy Tracker papers:
+
+- Javer, A., Currie, M., Lee, C. W., Hokanson, J., Li, K., Martineau, C. N.,
+  Yemini, E., Grundy, L. J., Li, C., Ch'ng, Q., Schafer, W. R., Nollen, E. A. A.,
+  Kerr, R. & Brown, A. E. X. An open-source platform for analyzing and sharing
+  worm-behavior data. *Nature Methods* **15**, 645–646 (2018).
+  <https://doi.org/10.1038/s41592-018-0112-1>
+- Javer, A., Ripoll-Sánchez, L. & Brown, A. E. X. Powerful and interpretable
+  behavioural features for quantitative phenotyping of *Caenorhabditis
+  elegans*. *Philosophical Transactions of the Royal Society B* **373**,
+  20170375 (2018). <https://doi.org/10.1098/rstb.2017.0375>
