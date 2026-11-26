@@ -1,0 +1,13 @@
+# Raw sample video (6.5 GB): too large for GitHub. It is published on Zenodo
+# (https://doi.org/10.5281/zenodo.24546189); download it with
+#   python custom_python_scripts/video_processing/download_sample_video.py
+Sample_data/Videos/071026_HML1630_01.avi
+Sample_data/Videos/071026_HML1630_01.avi.part
+
+# macOS Finder metadata
+.DS_Store
+
+# Generated when the code runs
+__pycache__/
+.ipynb_checkpoints/
+custom_python_scripts/output/

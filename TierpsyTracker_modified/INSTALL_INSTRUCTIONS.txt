@@ -1,0 +1,126 @@
+Installing the modified Tierpsy Tracker
+=======================================
+
+This folder contains:
+  tierpsy-tracker/                    Tierpsy Tracker source (upstream commit
+                                      2653ecb, with local changes to 4 files)
+  environment.yml                     exact package versions of the conda
+                                      environment Tierpsy was run in
+  shared_processing_parameters.json   Tierpsy processing parameters
+
+The environment was recorded on macOS on Apple silicon (osx-arm64). It
+includes tensorflow-macos, which is macOS-only.
+
+Run all commands below from this folder (TierpsyTracker_modified/).
+
+
+1. Prerequisites
+----------------
+  - conda (Miniforge or Anaconda)
+  - A C compiler. On macOS, install Apple's command line tools if
+    `clang --version` does not print a version:
+      xcode-select --install
+
+
+2. Create the conda environment
+-------------------------------
+  conda env create -f environment.yml
+  conda activate tierpsy
+
+  The environment is named "tierpsy". If you already have one with that
+  name, choose another, e.g.:
+    conda env create -f environment.yml -n tierpsy_paper
+    conda activate tierpsy_paper
+
+
+3. Install Tierpsy from the included source
+-------------------------------------------
+  CC=clang CFLAGS="-std=gnu89" pip install --no-deps --no-build-isolation -e tierpsy-tracker
+
+  Why each part is needed:
+    -e                     Editable install, as in Tierpsy's own instructions.
+                           A regular (non-editable) install leaves out the
+                           folder tierpsy/extras/splitfov_param_files, and
+                           Tierpsy then fails on import.
+    --no-build-isolation   Tierpsy's setup.py imports Cython and numpy, so the
+                           build must use the ones in this environment.
+    --no-deps              Everything Tierpsy needs is already in the
+                           environment at the recorded versions.
+    CFLAGS="-std=gnu89"    Tierpsy's c_circCurvature.c is written in an older
+                           C style. Recent clang versions (e.g. Apple clang 17)
+                           refuse to compile it, or compile it so that a
+                           function is missing at load time. This flag compiles
+                           it in the older C dialect (GNU C89) it was written for.
+
+
+4. Check the installation
+-------------------------
+  tierpsy_process --help      # prints the batch-processing options
+  tierpsy_gui                 # opens the Tierpsy Tracker window
+
+
+5. Process videos
+-----------------
+  GUI: run `tierpsy_gui`, choose "Batch Processing Multiple Files", and
+  select shared_processing_parameters.json with the "Parameters File" button.
+
+  Command line:
+    tierpsy_process --json_file shared_processing_parameters.json \
+      --video_dir_root /path/to/videos
+    (see `tierpsy_process --help` for the other options)
+
+  By default Tierpsy writes MaskedVideos/<video>.hdf5 and
+  Results/<video>_featuresN.hdf5 into subfolders of the video folder
+  (e.g. /path/to/videos/MaskedVideos/). The analysis code reads these from
+  Sample_data/Videos/ (or your own data root's Videos/ folder); see
+  Sample_data/README.md.
+
+  The raw sample video (071026_HML1630_01.avi, 6.5 GB) is on Zenodo, not in
+  this repository: https://doi.org/10.5281/zenodo.24546189
+  Download it with (from custom_python_scripts/):
+    python video_processing/download_sample_video.py
+  To process it, put a copy in a folder of its own rather than running
+  Tierpsy on Sample_data/Videos/, which already holds the Tierpsy output
+  used for the analysis.
+
+
+6. Tierpsy test data (optional)
+-------------------------------
+  Tierpsy's example/test videos are not included in this folder. They are
+  published by the Tierpsy developers on Zenodo as "Tierpsy Tracker test data"
+  (record 3837679; one file, test_data.zip, 901 MB):
+    https://zenodo.org/records/3837679
+
+  To download and unpack them, with the environment active:
+    tierpsy_tests --download_files
+
+  This puts them in tierpsy-tracker/tierpsy/tests/data/ (AVI_VIDEOS,
+  GECKO_VIDEOS, MANUAL_FEATS, RIG_HDF5_VIDEOS, WORM_MOTEL, WT2). With no test
+  names it only downloads, then prints "No tests given". To also run a test:
+    tierpsy_tests AVI_VIDEOS
+  To download somewhere else, add --data_dir /path/to/folder (and pass the
+  same --data_dir when running tests).
+
+  tests/data/ is listed in tierpsy-tracker/.gitignore, so downloaded test
+  data is not committed to this repository.
+
+
+What was and was not tested (2026-11-25, macOS on Apple silicon)
+-----------------------------------------------------------------
+  - environment.yml: the conda packages solve to exactly the recorded
+    versions (conda --dry-run), and the pip packages resolve to the recorded
+    versions (pip --dry-run). Conda also adds setuptools and
+    libclang-cpp22.1, which were not in the recorded environment; the pip
+    section then installs the recorded setuptools 81.0.0. Creating the full
+    environment from the file was not tested.
+  - Step 3: tested on a copy of tierpsy-tracker/ using the recorded
+    environment. All 6 compiled modules built, Tierpsy imported, and the
+    compiled circCurvature and curvspace functions gave results identical to
+    the build used for the analysis.
+  - Step 6: `tierpsy_tests --download_files` (run from this folder's
+    tierpsy-tracker/ code in the recorded environment) downloaded and
+    unpacked the Zenodo test data. The test inputs (16 files) matched, by
+    name and size, the test data used during the analysis.
+  - `pip check` in the recorded environment reports "tensorflow-macos 2.12.0
+    is not supported on this platform". This message was already present in
+    the environment used for the analysis.

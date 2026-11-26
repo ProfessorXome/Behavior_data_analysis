@@ -1,0 +1,201 @@
+Useful commands
+===============
+Run everything from custom_python_scripts/ (the folder containing
+run_pipeline.py) unless noted. Commands use the sample recording in
+../Sample_data/ (071026_HML1630_01), the Sample_data/ folder next to
+custom_python_scripts/. Sample_data/README.md explains the data layout and
+how to use your own data.
+
+
+Environments
+------------
+  Two conda environments, each with an exact-version environment file:
+
+  # worm-analysis: analysis notebook, run_pipeline.py, Tierpsy CSV export,
+  # fixed-speed builder, video FPS table
+  conda env create -f worm_analysis/environment.yml     # once
+  conda activate worm-analysis
+
+  # ht_flip: head/tail flip-range annotator (head_tail_flips/flip_range_tool.py)
+  conda env create -f head_tail_flips/environment.yml   # once
+  conda activate ht_flip
+
+  # Optional: run a command in an env without activating it
+  conda run -n worm-analysis python ...
+  conda run -n ht_flip python ...
+
+
+Where data is read from
+-----------------------
+  Every script reads one "data root" (default: ../Sample_data/):
+
+    <data root>/Videos/MaskedVideos/<video>.hdf5          Tierpsy output
+    <data root>/Videos/Results/<video>_featuresN.hdf5     Tierpsy output
+    <data root>/Tierpsy_csvs/<strain>/<video>_TS_W<n>_*.csv
+    <data root>/video_fps.csv
+
+  To use another folder laid out the same way, either pass --data-root to
+  each script or set it once for the shell session:
+  export WORM_DATA_ROOT=/path/to/my_data
+
+
+Raw sample video (optional download)
+------------------------------------
+  The raw recording 071026_HML1630_01.avi (6.5 GB) is not in this repository;
+  it is on Zenodo: https://doi.org/10.5281/zenodo.24546189
+  No script here reads it. To download it to ../Sample_data/Videos/:
+
+  python video_processing/download_sample_video.py
+  # Interrupted? Run the same command again to resume.
+  # Save elsewhere: add --dest /path/to/folder
+  # Checks the file against Zenodo's MD5 checksum. Standard library only,
+  # so any environment works.
+
+
+Processing steps, in order
+--------------------------
+  1. Export per-worm CSVs from Tierpsy        export_tierpsy_csvs.py
+  2. Mark head/tail swaps (optional)          head_tail_flips/flip_range_tool.py
+  3. Write head/tail-corrected speeds         make_fixed_speeds_from_excel.py
+  4. Build the per-video FPS table            build_video_fps_table.py
+  5. Analyse                                  run_pipeline.py or the notebook
+  Steps 1, 3 and 4 have already been run for the sample data.
+
+
+1. Export Tierpsy feature CSVs (raw speed + blob perimeter)
+-----------------------------------------------------------
+  Reads  <data root>/Videos/**/Results/<video>_featuresN.hdf5
+  Writes <data root>/Tierpsy_csvs/<strain>/<video>_TS_W<n>_speed.csv
+         <data root>/Tierpsy_csvs/<strain>/<video>_TS_W<n>_blob_perimeter.csv
+         (strain = the token after the date in the video stem)
+  Only these two features are used by the analysis; add others to
+  DEFAULT_EXPORTS in the script if you want them.
+
+  conda activate worm-analysis
+
+  # list the worms (worm_index_manual) in a video
+  python video_processing/export_tierpsy_csvs.py --video HML1630_01 --list-worms
+
+  # export chosen worms (as in the sample data), or every worm
+  python video_processing/export_tierpsy_csvs.py --video HML1630_01 --animals 1-8,10,26
+  python video_processing/export_tierpsy_csvs.py --video HML1630_01 --animals all
+
+  python video_processing/export_tierpsy_csvs.py --help   # --strain, --output, --time-unit, ...
+
+
+2. HT flip-range annotator (flip_range_tool)
+--------------------------------------------
+  Clips around every tip appearance/disappearance (incl. track-table frame
+  gaps and frame 0), tip-collapse, and tip-identity jumps.
+  Mark full invert ranges with s/e/a (open range persists across clips).
+
+  Lives in head_tail_flips/ and is self-contained. Runs in ht_flip:
+  conda activate ht_flip
+
+  # From custom_python_scripts/ (note the head_tail_flips. prefix):
+  python -m head_tail_flips.flip_range_tool \
+    --video 071026_HML1630_01 \
+    --worms 1-8,10,26
+
+  # Same thing, running the file directly:
+  python head_tail_flips/flip_range_tool.py --video 071026_HML1630_01 --worms 1-8,10,26
+
+  # From inside head_tail_flips/ (no prefix):
+  cd head_tail_flips
+  python -m flip_range_tool --video 071026_HML1630_01 --worms 1-8,10,26
+
+  # NOTE: `python -m flip_range_tool` from custom_python_scripts/ does NOT
+  # work ("No module named flip_range_tool"); use the head_tail_flips. prefix.
+
+  Options
+    --video    video stem, e.g. 071026_HML1630_01 (required)
+    --worms    worm ids: comma list and/or ranges, e.g. 1,2,5-8 (required)
+    --out      output CSV. Default: head_tail_flips/data/<video>_ht_flip_ranges.csv
+               Re-running with the same --out loads and keeps prior ranges.
+    --root     folder holding Tierpsy output (MaskedVideos/ + Results/),
+               searched recursively. Default: ../Sample_data/Videos/
+               (or $WORM_DATA_ROOT/Videos/).
+    --tasks-out  optional CSV of the generated proposals
+    python -m head_tail_flips.flip_range_tool --help   # all tuning options
+
+  # Keys: s/e start/end  a accept  Esc cancel  j/k nav  +/− expand  q quit
+  # (full key list is in the on-screen help panel)
+
+
+3. Build FIXED speed CSVs (head/tail-corrected speed)
+-----------------------------------------------------
+  Inputs:  <data root>/Tierpsy_csvs/<strain>/{video}_TS_W{n}_speed.csv
+  Outputs: {video}_TS_W{n}_speed_fixed.csv in the same folder
+  Every worm gets a fixed file; worms without flip ranges are copied unchanged.
+
+  conda activate worm-analysis
+
+  # No corrections needed (how the sample data was made)
+  python video_processing/make_fixed_speeds_from_excel.py \
+    --no-flips --video 071026_HML1630_01
+
+  # Annotator CSV from flip_range_tool
+  python video_processing/make_fixed_speeds_from_excel.py \
+    --ranges head_tail_flips/data/071026_HML1630_01_ht_flip_ranges.csv
+
+  # Excel workbook: one sheet per video; columns W1, W2, …; cells "start, end"
+  python video_processing/make_fixed_speeds_from_excel.py \
+    --excel my_frame_flips.xlsx --sheet 1630_01 \
+    --video 071026_HML1630_01
+
+  # Preview only (no writes): add --dry-run
+  # Other CSV folder: add --csv-dir path/to/folder
+
+
+4. Video FPS table
+------------------
+  Reads every strain folder in <data root>/Tierpsy_csvs/ and writes
+  <data root>/video_fps.csv (true FPS = frames / 600 s per video).
+
+  conda activate worm-analysis
+  python video_processing/build_video_fps_table.py
+
+
+5a. Offline analysis pipeline (batch, no Jupyter)
+-------------------------------------------------
+  conda activate worm-analysis
+
+  # every strain folder in <data root>/Tierpsy_csvs/ → output/<strain>/
+  python run_pipeline.py
+
+  # one strain folder, with plots
+  python run_pipeline.py \
+    --data-dir ../Sample_data/Tierpsy_csvs/HML1630 \
+    --plot-worms W4 W7 \
+    --plot-summary
+
+  # your own data
+  python run_pipeline.py --data-root /path/to/my_data
+
+  python run_pipeline.py --help   # --pattern, --min-frames, --output-dir, ...
+
+
+5b. Jupyter notebook (single-worm analysis / plots / strain comparisons)
+------------------------------------------------------------------------
+  conda activate worm-analysis
+  jupyter lab worm_analysis/worm_analysis.ipynb
+  # or: jupyter notebook worm_analysis/worm_analysis.ipynb
+
+  # Kernel: "Python (worm-analysis)". If it is not listed, register it once:
+  python -m ipykernel install --user --name worm-analysis --display-name "Python (worm-analysis)"
+
+  # Own data: set DATA_ROOT in the setup cell. Strains with no CSV folder
+  # are skipped. Outputs go to output/notebook/.
+
+
+Notes
+-----
+  - Analysis, notebook, Tierpsy export and fixed-speed builder: worm-analysis.
+    Flip-range annotator: ht_flip.
+  - Activity and reorientation are computed from each video's featuresN.hdf5.
+    If it is missing the pipeline warns and those worms are never "active".
+  - Continuous minutes need each recording's *_blob_perimeter.csv; recordings
+    without one are skipped from continuous minutes with a warning.
+  - After editing flip ranges (Excel or annotator CSV), re-run
+    make_fixed_speeds_from_excel.py, then the analysis.
+  - Incomplete Excel ranges like "2565," are skipped with a warning.

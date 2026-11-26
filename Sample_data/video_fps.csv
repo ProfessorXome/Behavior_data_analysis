@@ -1,0 +1,2 @@
+dataset,recording_date,video_number,video_key,data_dir,assumed_fps,duration_s,n_frames,fps_true,frames_per_minute,source,n_worms_used,n_speed_files
+HML1630,071026,01,HML1630|071026|01,Tierpsy_csvs/HML1630,6.0,600.0,3400,5.666667,340,frame,10,10
