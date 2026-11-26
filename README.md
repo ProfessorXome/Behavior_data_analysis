@@ -30,7 +30,8 @@ custom_python_scripts/       analysis code (run commands from this folder)
 ├── head_tail_flips/         interactive tool for marking head/tail-swap frame ranges
 └── USEFUL_COMMANDS.txt      every processing step, with commands
 Sample_data/                 one real recording (071026_HML1630_01) in the layout
-                             the code expects; its README explains the layout
+                             the code expects, with the paper's head/tail-corrected
+                             speeds (and a backup copy); its README explains it
 TierpsyTracker_modified/     modified version of Tierpsy Tracker (original:
                              github.com/Tierpsy/tierpsy-tracker), its conda
                              environment and INSTALL_INSTRUCTIONS.txt
@@ -52,8 +53,12 @@ This analyses the sample recording and writes its tables to
 `custom_python_scripts/output/HML1630/`. The same analysis is available
 interactively in `worm_analysis/worm_analysis.ipynb`.
 
-The sample's head/tail-corrected speeds were made without any corrections
-(`--no-flips`), so its results will differ somewhat from the paper; see
+The sample's head/tail-corrected speeds (`*_speed_fixed.csv`) are the
+hand-corrected files used for this video in the paper, so the analysis gives
+the same data as the paper for this recording. If you redo the whole process
+yourself, including marking head/tail swaps with the flip-range tool, frame
+choices that differ from the paper's can give very slightly different results.
+A backup of the paper's files is in `Sample_data/Fixed_speeds_backup/`; see
 `Sample_data/README.md`.
 
 ## Using your own videos

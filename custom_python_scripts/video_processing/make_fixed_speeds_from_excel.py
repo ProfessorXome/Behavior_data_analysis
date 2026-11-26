@@ -26,9 +26,13 @@ export_tierpsy_csvs.py writes), with the strain taken from the video stem.
 The data root is ``../Sample_data/`` unless ``--data-root`` or the
 ``WORM_DATA_ROOT`` environment variable says otherwise.
 
+Existing fixed files are replaced. The sample data's fixed files are the
+paper's hand-corrected speeds; backup copies are in
+``../Sample_data/Fixed_speeds_backup/HML1630/``.
+
 Examples (run from custom_python_scripts/, ``conda activate worm-analysis``)
 --------
-# No corrections needed (sample data)
+# No corrections needed (fixed files = copies of the raw speed)
 python video_processing/make_fixed_speeds_from_excel.py \\
   --no-flips --video 071026_HML1630_01
 

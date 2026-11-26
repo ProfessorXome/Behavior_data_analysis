@@ -15,12 +15,15 @@ Sample_data/                         <- the "data root" (next to custom_python_s
 │   │   └── 071026_HML1630_01.hdf5           masked video (µm/px scale; flip-range tool)
 │   └── Results/
 │       └── 071026_HML1630_01_featuresN.hdf5 tracks, skeletons, raw speed
-└── Tierpsy_csvs/                    per-worm CSVs, one folder per strain
-    └── HML1630/
-        ├── 071026_HML1630_01_TS_W1_speed.csv           raw Tierpsy speed
-        ├── 071026_HML1630_01_TS_W1_speed_fixed.csv     head/tail-corrected speed
-        ├── 071026_HML1630_01_TS_W1_blob_perimeter.csv  blob perimeter
-        └── … the same 3 files for W2–W8, W10, W26
+├── Tierpsy_csvs/                    per-worm CSVs, one folder per strain
+│   └── HML1630/
+│       ├── 071026_HML1630_01_TS_W1_speed.csv           raw Tierpsy speed
+│       ├── 071026_HML1630_01_TS_W1_speed_fixed.csv     head/tail-corrected speed (the paper's)
+│       ├── 071026_HML1630_01_TS_W1_blob_perimeter.csv  blob perimeter
+│       └── … the same 3 files for W2–W8, W10, W26
+└── Fixed_speeds_backup/             backup copies of the paper's corrected speeds;
+    └── HML1630/                     no script reads or writes this folder
+        └── 071026_HML1630_01_TS_W<n>_speed_fixed.csv   (10 files)
 ```
 
 Not included: Tierpsy's `_skeletons.hdf5` / `_intensities.hdf5`, which no
@@ -56,7 +59,8 @@ Tierpsy output used by the analysis.
 | `Videos/Results/<video>_featuresN.hdf5` | Tierpsy | Centroid track, which decides when a worm is **active**; skeleton head/tail positions for **reorientation angles**; raw speed, to tell which frames the fixed speed re-signed |
 | `Videos/MaskedVideos/<video>.hdf5` | Tierpsy | Microns-per-pixel scale (falls back to 15 µm/px if missing); frames for the flip-range tool |
 | `Tierpsy_csvs/<strain>/*_speed.csv` | `video_processing/export_tierpsy_csvs.py` | Raw Tierpsy speed; input for the fixed speed |
-| `Tierpsy_csvs/<strain>/*_speed_fixed.csv` | `video_processing/make_fixed_speeds_from_excel.py` | The signed speed the analysis reads (forward > 0, reverse < 0) |
+| `Tierpsy_csvs/<strain>/*_speed_fixed.csv` | `video_processing/make_fixed_speeds_from_excel.py` (the sample's are the paper's hand-corrected files; see below) | The signed speed the analysis reads (forward > 0, reverse < 0) |
+| `Fixed_speeds_backup/<strain>/*_speed_fixed.csv` | Copied from the paper's data | Backup of the paper's corrected speeds, in case yours replace them; not read by any script |
 | `Tierpsy_csvs/<strain>/*_blob_perimeter.csv` | `video_processing/export_tierpsy_csvs.py` | `blob_perimeter_median` in the output tables; frame count for `video_fps.csv`. **Required** for a recording to contribute continuous minutes |
 | `video_fps.csv` | `video_processing/build_video_fps_table.py` | True frame rate of each video |
 
@@ -70,10 +74,35 @@ continuous minutes; the analysis warns and names it. Other feature CSVs
 (e.g. `angular_velocity_midbody`, regional speeds, `blob_area`) are not used.
 They are ignored if present.
 
-**About the sample's fixed speeds:** they were made with `--no-flips`, so they
-are exact copies of the raw speed. In the published analysis, frames where
-Tierpsy had swapped head and tail were re-signed by hand, so results for this
-video will differ somewhat from the paper.
+### The sample's head/tail-corrected speeds
+
+Tierpsy sometimes swaps a worm's head and tail, which flips the sign of its
+speed (forward vs reverse). For the paper, those frames were marked by hand
+and their speed re-signed. The sample's `*_speed_fixed.csv` files are the
+corrected speeds used for this video in the paper's analysis: 695 frames
+across 8 of the 10 worms are re-signed (W4 and W8 needed none), and every other
+value equals the raw speed in `*_speed.csv`.
+
+They are included so that running the analysis on the sample data gives the
+same data as the paper for this recording, without redoing the head/tail
+marking.
+
+**If you run the whole process yourself**, from the video through Tierpsy to
+the analysis, you need to mark the head/tail swaps with the flip-range tool
+(`custom_python_scripts/head_tail_flips/`) and then write the fixed speeds
+(step 3 in "Processing your own data" below). If the frames you mark are not
+exactly the same as the ones marked for the paper, your fixed speeds will
+differ, and your results may be very slightly different from the paper's.
+
+**Backup copy.** `make_fixed_speeds_from_excel.py` writes its fixed speeds into
+`Tierpsy_csvs/<strain>/` and replaces any that are already there, including
+the paper's. Unchanged copies of the paper's files are kept in
+`Fixed_speeds_backup/HML1630/`, which no script reads or writes. To put them
+back (from `custom_python_scripts/`):
+
+```bash
+cp ../Sample_data/Fixed_speeds_backup/HML1630/*_speed_fixed.csv ../Sample_data/Tierpsy_csvs/HML1630/
+```
 
 ## Naming rules
 
@@ -121,6 +150,9 @@ video will differ somewhat from the paper.
    python video_processing/make_fixed_speeds_from_excel.py --data-root /path/to/my_data --ranges head_tail_flips/data/071026_HML1630_01_ht_flip_ranges.csv
    ```
    If nothing needs correcting, use `--no-flips --video <video>` instead.
+   Either way, this replaces any existing `*_speed_fixed.csv` files for that
+   video. For the sample video, the paper's files can be restored from
+   `Fixed_speeds_backup/` (see above).
 4. **Build the FPS table:**
    ```bash
    python video_processing/build_video_fps_table.py --data-root /path/to/my_data
